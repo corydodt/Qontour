@@ -45,6 +45,12 @@ class Command(protocol.ProcessProtocol):
     def __init__(self):
         self.deferred = defer.Deferred()
 
+    def errReceived(self, data):
+        sys.stderr.write(data)
+
+    def outReceived(self, data):
+        sys.stdout.write(data)
+
     def processEnded(self, status):
         self.deferred.callback(status)
 
@@ -112,7 +118,8 @@ class Runner(object):
 
         self.pp = pp = Command()
         self.reactor.spawnProcess(pp, procutils.which(self.cmd[0])[0],
-                self.cmd, childFDs={0:0, 1:1, 2:2})
+                self.cmd,
+                childFDs={0:0, 1:"r", 2:"r"})
         pp.deferred.addBoth(self.ended)
         return pp.deferred
 
