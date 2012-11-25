@@ -6,3 +6,4 @@
 ^local/
 ^bin/(python.*|pip.*|easy_.*|activate.*)
 ^include/python2.7
+^bin/(cftp|ckeygen|conch|lore|mailmail|manhole|pyhtmlizer|tap2deb|tap2rpm|tapconvert|tkconch|trial|twistd)$
