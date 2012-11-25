@@ -1,4 +1,4 @@
 #!/bin/bash
 
 
-twistd -n web --class=helloworld.resource
+twistd -n web --class=qontour.root.resource
