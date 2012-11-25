@@ -1,4 +1,3 @@
 #!/bin/bash
 
-
-twistd -n web --class=qontour.root.resource
+exec twistd -n web --class=qontour.root.resource

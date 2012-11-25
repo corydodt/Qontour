@@ -14,6 +14,7 @@ Environment variables:
 
 import sys, os
 import fnmatch
+import signal
 
 from twisted.python import usage, filepath, log
 from twisted.internet import inotify, reactor, protocol, defer, error
@@ -51,9 +52,7 @@ class Command(protocol.ProcessProtocol):
         sys.stdout.write(data)
 
     def processEnded(self, status):
-        if status.type is error.ProcessDone:
-            return self.deferred.callback(None)
-        return self.deferred.errback(status)
+        self.deferred.callback(status)
 
 
 class Runner(object):
@@ -70,8 +69,9 @@ class Runner(object):
         """
         My process ended, try it again.
         """
-        # if status != 0 ...
-        1/0
+        if status.type is not error.ProcessDone:
+            print status.value
+
         if self.restarting:
             return self.run()
 
@@ -88,6 +88,26 @@ class Runner(object):
         Start watches and run the command
         """
         if self.notifier is None:
+            def stopRestarting(origHandler, signum, frame):
+                """
+                If recycle is killed with Ctrl+C, we need to prevent restart
+                before Twisted's default signal handler runs
+                """
+                self.restarting = False
+                self.pp.transport.signalProcess('TERM')
+
+                r = origHandler(signum, frame)
+
+                return r
+
+            signal.signal(signal.SIGINT, 
+                    lambda s, f: stopRestarting(reactor.sigInt, s, f))
+            signal.signal(signal.SIGTERM, 
+                    lambda s, f: stopRestarting(reactor.sigTerm, s, f))
+            if hasattr(signal, 'SIGBREAK'):
+                signal.signal(signal.SIGBREAK, 
+                        lambda s, f: stopRestarting(reactor.sigBreak, s, f))
+
             self.notifier = inotify.INotify()
             self.notifier.startReading()
             watches = findByPatterns(RECYCLE_PATTERNS, RECYCLE_IGNORES)
@@ -97,9 +117,8 @@ class Runner(object):
                         callbacks=[self.inotified])
 
         self.pp = pp = Command()
-        p = self.reactor.spawnProcess(pp, self.cmd[0], self.cmd)
-        pp.deferred.addErrback(log.err)
-        pp.deferred.addBoth(lambda _: reactor.stop())
+        self.reactor.spawnProcess(pp, self.cmd[0], self.cmd)
+        pp.deferred.addBoth(self.ended)
         return pp.deferred
 
 
@@ -111,8 +130,12 @@ class Options(usage.Options):
     def postOptions(self):
         self.runner = Runner(reactor, *self['cmd'])
         d = self.runner.run()
-        d.addBoth(lambda _: reactor.stop())
-        reactor.run()
+        d.addErrback(log.err)
+        def quitting(reason):
+            self.runner.restarting = False
+            reactor.stop() if reactor.running else None
+        d.addBoth(quitting)
+        reactor.run(installSignalHandlers=False)
 
 
 
