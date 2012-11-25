@@ -1,0 +1,4 @@
+#!/bin/bash
+
+
+twistd -n web --class=helloworld.resource
