@@ -1,9 +1,9 @@
 from setuptools import setup
 
-from qontour import version, name
+from qontour import version, NAME
 
 setup(
-        name=name,
+        name=NAME,
         author="Cory Dodt",
         version=version.string,
         install_requires=["distribute", "klein"],
