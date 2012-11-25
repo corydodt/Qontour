@@ -1,3 +1,8 @@
 \.pyc$
 ^Qontour.egg
 ^dist/
+# virtualenv cruft
+^lib/
+^local/
+^bin/(python.*|pip.*|easy_.*|activate.*)
+^include/python2.7
