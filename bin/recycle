@@ -16,7 +16,7 @@ import sys, os
 import fnmatch
 import signal
 
-from twisted.python import usage, filepath, log
+from twisted.python import usage, filepath, log, procutils
 from twisted.internet import inotify, reactor, protocol, defer, error
 
 
@@ -44,12 +44,6 @@ class Command(protocol.ProcessProtocol):
     """
     def __init__(self):
         self.deferred = defer.Deferred()
-
-    def errReceived(self, data):
-        sys.stderr.write(data)
-
-    def outReceived(self, data):
-        sys.stdout.write(data)
 
     def processEnded(self, status):
         self.deferred.callback(status)
@@ -117,7 +111,8 @@ class Runner(object):
                         callbacks=[self.inotified])
 
         self.pp = pp = Command()
-        self.reactor.spawnProcess(pp, self.cmd[0], self.cmd)
+        self.reactor.spawnProcess(pp, procutils.which(self.cmd[0])[0],
+                self.cmd, childFDs={0:0, 1:1, 2:2})
         pp.deferred.addBoth(self.ended)
         return pp.deferred
 
