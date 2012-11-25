@@ -1,0 +1,137 @@
+#!/usr/bin/env python
+"""
+recyle: use inotify to watch file patterns, then restart the command 
+when one of those file patterns is modified
+
+Environment variables: 
+
+    RECYCLE_WATCH="*.py"
+        Patterns to watch for changes
+    RECYCLE_IGNORE="./bin/activate_this.py ./lib/* ./local/*"
+        Patterns to ignore (defaults to files created by virtualenv)
+
+"""
+
+import sys, os
+import fnmatch
+
+from twisted.python import usage, filepath, log
+from twisted.internet import inotify, reactor, protocol, defer, error
+
+
+RECYCLE_PATTERNS = tuple(os.environ.get('RECYCLE_WATCH', '*.py').split())
+RECYCLE_IGNORES = tuple(os.environ.get('RECYCLE_IGNORE', './bin/activate_this.py ./lib/* ./local/*').split())
+
+
+def findByPatterns(patterns, ignores):
+    ret = []
+    for root, dirs, files in os.walk('.'):
+        ret.extend([root + '/' + f for f in files])
+    for pat in patterns:
+        ret = fnmatch.filter(ret, pat)
+
+    ignored = []
+    for ignore in ignores:
+        ignored.extend(fnmatch.filter(ret, ignore))
+
+    return sorted(list(set(ret) - set(ignored)))
+
+
+class Command(protocol.ProcessProtocol):
+    """
+    Just write data and notify when ended.
+    """
+    def __init__(self):
+        self.deferred = defer.Deferred()
+
+    def errReceived(self, data):
+        sys.stderr.write(data)
+
+    def outReceived(self, data):
+        sys.stdout.write(data)
+
+    def processEnded(self, status):
+        if status.type is error.ProcessDone:
+            return self.deferred.callback(None)
+        return self.deferred.errback(status)
+
+
+class Runner(object):
+    """
+    Run a command repeatedly.
+    """
+    def __init__(self, reactor, *cmd):
+        self.cmd = cmd
+        self.reactor = reactor
+        self.restarting = True
+        self.notifier = None
+
+    def ended(self, status):
+        """
+        My process ended, try it again.
+        """
+        # if status != 0 ...
+        1/0
+        if self.restarting:
+            return self.run()
+
+    def inotified(self, notifier, filepath, mask):
+        """
+        Triggered by an inotify event, kills the process
+        """
+        # TODO - TERM, wait, then KILL
+        print filepath, mask
+        self.pp.transport.signalProcess('TERM')
+
+    def run(self):
+        """
+        Start watches and run the command
+        """
+        if self.notifier is None:
+            self.notifier = inotify.INotify()
+            self.notifier.startReading()
+            watches = findByPatterns(RECYCLE_PATTERNS, RECYCLE_IGNORES)
+            for w in watches:
+                self.notifier.watch(filepath.FilePath(w),
+                        inotify.IN_MODIFY,
+                        callbacks=[self.inotified])
+
+        self.pp = pp = Command()
+        p = self.reactor.spawnProcess(pp, self.cmd[0], self.cmd)
+        pp.deferred.addErrback(log.err)
+        pp.deferred.addBoth(lambda _: reactor.stop())
+        return pp.deferred
+
+
+class Options(usage.Options):
+    synopsis = "recycle <cmd> [args...]"
+    def parseArgs(self, *cmd):
+        self['cmd'] = cmd
+
+    def postOptions(self):
+        self.runner = Runner(reactor, *self['cmd'])
+        d = self.runner.run()
+        d.addBoth(lambda _: reactor.stop())
+        reactor.run()
+
+
+
+def run(argv=None):
+    if argv is None:
+        argv = sys.argv
+    o = Options()
+    try:
+        o.parseOptions(argv[1:])
+    except usage.UsageError, e:
+        if hasattr(o, 'subOptions'):
+            print str(o.subOptions)
+        else:
+            print str(o)
+        print str(e)
+        return 1
+
+    return 0
+
+
+if __name__ == '__main__': sys.exit(run())
+
