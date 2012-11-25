@@ -8,11 +8,12 @@ from cStringIO import StringIO
 
 import yaml
 
-from twisted.web.static import File
+from twisted.web.static import File, Data
 
 from klein import resource, route
 
 from qontour import search, IMAGE_ROOT
+
 
 @route('/i/')
 def images(request):
@@ -29,6 +30,7 @@ def imageList(request):
     return json.dumps(ss.results())
 
 @route('/')
-def hello(request):
-    return File('./static/index.html')
+def index(request):
+    with open('./static/index.html') as f:
+        return f.read()
 
