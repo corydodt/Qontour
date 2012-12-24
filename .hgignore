@@ -9,3 +9,4 @@
 ^bin/(cftp|ckeygen|conch|lore|mailmail|manhole|pyhtmlizer|tap2deb|tap2rpm|tapconvert|tkconch|trial|twistd)$
 ^static/support/angular-1.1.1
 ^_trial_temp
+^twistd.log$
