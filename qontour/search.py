@@ -54,16 +54,6 @@ class Search(object):
         return ret
 
 
-strings = """
-fooBarMansion-1.html
-a_b-1.html
-AB-1.html
-ab1.html
-HTMLDocument.html
-"foo bar.html"
-ACoolDocument.html
-"""
-
 RX = re.compile(r'[^a-zA-Z0-9]')
 
 def capsplit(s):
