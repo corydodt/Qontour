@@ -2,7 +2,9 @@
 Search interface for image files
 """
 
+import os
 import re
+import string
 from pipes import quote
 from subprocess import check_output, CalledProcessError
 import urllib
@@ -38,7 +40,48 @@ class Search(object):
         return ret
 
     def results(self):
-        res = locate(self.query)
-        urls = self._urls(*res)
-        return urls
+        hits = locate(self.query)
+        ret = []
+        for hit, url in zip(hits, self._urls(*hits)):
+            label = capsplit(
+                    ''.join(os.path.splitext(
+                        hit.basename()
+                        )[:-1]))
+            ret.append({
+                'label': label,
+                'url': url,
+                })
+        return ret
 
+
+strings = """
+fooBarMansion-1.html
+a_b-1.html
+AB-1.html
+ab1.html
+HTMLDocument.html
+"foo bar.html"
+ACoolDocument.html
+"""
+
+RX = re.compile(r'[^a-zA-Z0-9]')
+
+def capsplit(s):
+    """
+    Split s by punctuation and capitalization, attempting to preserve acronyms
+    """
+    s = re.sub(r'([A-Z])', r' \1', s).strip()
+    items = RX.split(s)
+
+    buf = []
+    x = []
+    for item in items:
+        if len(item) == 1 and item in string.uppercase:
+            buf.append(item)
+        else:
+            if buf:
+                x.extend([''.join(buf), item])
+            else:
+                x.append(item)
+            buf = []
+    return ' '.join(x)
