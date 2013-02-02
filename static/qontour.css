@@ -1,0 +1,22 @@
+div.imageResult td.resultImage {
+    width: 256px;
+    height: 256px;
+}
+div.imageResult td.resultText {
+    width: 256px;
+    height: 44px;
+}
+div.imageResult {
+    display: inline-block;
+    text-align: center;
+    /*
+    overflow: hidden;
+    */
+    outline: 1px dotted black;
+}
+
+div.imageResult img { 
+    max-width: 256px;
+    max-height: 256px;
+}
+
