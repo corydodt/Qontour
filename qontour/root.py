@@ -31,6 +31,12 @@ def imageList(request):
 
 @route('/')
 def index(request):
-    with open('./static/index.html') as f:
-        return f.read()
+    """
+    Return index.html as a static file - note ./static must contain a file
+    named index.html
+
+    Possible klein bug: if File() is an actual path to index.html, instead of
+    the containing directory, this doesn't work (404)
+    """
+    return File('./static')
 
