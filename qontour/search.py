@@ -54,24 +54,66 @@ class Search(object):
         return ret
 
 
-RX = re.compile(r'[^a-zA-Z0-9]')
-
 def capsplit(s):
     """
     Split s by punctuation and capitalization, attempting to preserve acronyms
-    """
-    s = re.sub(r'([A-Z])', r' \1', s).strip()
-    items = RX.split(s)
 
-    buf = []
-    x = []
-    for item in items:
-        if len(item) == 1 and item in string.uppercase:
-            buf.append(item)
+    - split into runs of capital letters, lowercase letters, and other
+      characters
+
+    - runs of lowercase letters are considered single words. if preceded by a
+      capital letter, that letter is part of the word
+
+    - after removing initial capitals for lowercase words, all continuous runs
+      of capital letters are acronyms and kept together.
+
+    - discard all punctuation
+    """
+    uc = string.uppercase
+    lc = string.lowercase
+    digits = string.digits
+    other = object()
+
+    def category(c):
+        if c is None:
+            return None
+        if c in lc:
+            return lc
+        if c in uc:
+            return uc
+        if c in digits:
+            return digits
+        return other
+
+    runs = []
+    def finish(run):
+        run[1] = ''.join(run[1])
+        runs.append(run)
+
+    ss = list(s)
+    run = None
+    for cur, prev in zip(ss, [None]+ss):
+        cat = category(cur)
+        if cat != category(prev):
+            # new character class
+            if run is not None:
+                finish(run)
+            run = [cat, [cur]]
         else:
-            if buf:
-                x.extend([''.join(buf), item])
-            else:
-                x.append(item)
-            buf = []
-    return ' '.join(x)
+            run[1].append(cur)
+    finish(run)
+
+    for n, (ccur, cprev) in enumerate(zip(runs, [None]+runs)):
+        if ccur[0] == lc:
+            # lowercase, preceded by uppercase:
+            # grab one character from the end of the uc group and insert it
+            # into the lowercase group
+            if cprev and cprev[0] == uc:
+                _lastChar = cprev[1][-1]
+                cprev[1] = cprev[1][:-1]
+                ccur[1] = _lastChar + ccur[1]
+
+
+    runs = [r for r in runs if r[0] is not other and r[1]]
+    return ' '.join(zip(*runs)[1])
+
