@@ -19,7 +19,7 @@
     Search <input ng-model="q" name="q" type="text" placeholder="Describe an image"></input>
     <div ng-controller="ImageListCtrl">
       <div class="imageResult" ng-repeat="image in imageResults | filter:q">
-        <table><tbody><tr><td class="resultImage"><img src="{{image.url}}"></td></tr>
+        <table><tbody><tr><td class="resultImage"><img src="/thumb{{image.partialURL}}"></td></tr>
                       <tr><td class="resultText">{{image.label}}</td></tr>
         </tbody></table>
       </div>

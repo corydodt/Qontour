@@ -3,7 +3,6 @@ Search interface for image files
 """
 
 import os
-import re
 import string
 from pipes import quote
 from subprocess import check_output, CalledProcessError
@@ -36,7 +35,7 @@ class Search(object):
         ret = []
         lirp = len(IMAGE_ROOT.path)
         for p in paths:
-            ret.append(urllib.quote('/i' + p.path[lirp:], '/'))
+            ret.append(urllib.quote(p.path[lirp:], '/'))
         return ret
 
     def results(self):
@@ -49,7 +48,7 @@ class Search(object):
                         )[:-1]))
             ret.append({
                 'label': label,
-                'url': url,
+                'partialURL': url,
                 })
         return ret
 

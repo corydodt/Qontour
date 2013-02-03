@@ -4,6 +4,7 @@ Qontour resources
 
 import json
 from os.path import relpath
+import urllib
 
 from twisted.web.static import File, Data
 
@@ -11,6 +12,7 @@ from klein import resource, route
 (resource) # for pyflakes
 
 from qontour import search, IMAGE_ROOT
+from qontour.thumbs import thumbdb
 
 
 @route('/i/')
@@ -20,6 +22,16 @@ def images(request):
 @route('/static/')
 def static(request):
     return File('./static')
+
+@route('/thumb/')
+def thumb(request):
+    """
+    Requests to /thumb/xxx/image.jpg will return data from a mongodb
+    """
+    partialURL = urllib.unquote('/' + relpath(request.path, '/thumb'))
+    ret = Data(thumbdb[partialURL], 'image/png')
+    ret.isLeaf = True
+    return ret
 
 @route('/ilist')
 def imageList(request):
