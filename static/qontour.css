@@ -12,7 +12,6 @@ div.imageResult {
     /*
     overflow: hidden;
     */
-    outline: 1px dotted black;
 }
 
 div.imageResult img { 
