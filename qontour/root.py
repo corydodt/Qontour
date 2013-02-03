@@ -3,14 +3,12 @@ Qontour resources
 """
 
 import json
-import os.path
-from cStringIO import StringIO
-
-import yaml
+from os.path import relpath
 
 from twisted.web.static import File, Data
 
 from klein import resource, route
+(resource) # for pyflakes
 
 from qontour import search, IMAGE_ROOT
 
@@ -38,5 +36,7 @@ def index(request):
     Possible klein bug: if File() is an actual path to index.html, instead of
     the containing directory, this doesn't work (404)
     """
-    return File('./static')
+    fl = File('./static/index.html')
+    fl.isLeaf = True
+    return fl
 

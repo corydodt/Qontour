@@ -7,6 +7,7 @@
 ^bin/(python.*|pip.*|easy_.*|activate.*)
 ^include/python2.7
 ^bin/(cftp|ckeygen|conch|lore|mailmail|manhole|pyhtmlizer|tap2deb|tap2rpm|tapconvert|tkconch|trial|twistd)$
+^bin/pil.*
 ^static/support/angular-1.1.1
 ^_trial_temp
 ^twistd.log$
