@@ -6,6 +6,11 @@ setup(
         name=NAME,
         author="Cory Dodt",
         version=version.string,
-        install_requires=["distribute", "klein"],
+        install_requires=[
+            "distribute", 
+            "klein", 
+            "pillow", 
+            "pymongo", 
+            "twisted"],
         packages=["qontour"],
         )
